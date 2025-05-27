@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小四中文詞彙樂園</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans TC', 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            color: #1f2937; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow-x: hidden; 
+        }
+        .app-container {
+            background-color: rgba(255, 255, 255, 0.95); 
+            border-radius: 24px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            width: 100%;
+            max-width: 500px; 
+            margin: 20px;
+            overflow-y: auto; 
+            max-height: 95vh;
+        }
+
+        .card-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+            min-height: 240px; 
+        }
+        .card {
+            width: 300px;  
+            height: 200px; 
+            perspective: 1200px;
+            cursor: pointer;
+            margin-left: auto; 
+            margin-right: auto;
+        }
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94); 
+            transform-style: preserve-3d;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+            border-radius: 16px; 
+        }
+        .card.flipped .card-inner {
+            transform: rotateY(180deg);
+        }
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 15px; 
+            border-radius: 16px;
+            font-weight: 700; 
+            text-align: center; 
+            word-break: normal; 
+            overflow-wrap: break-word; 
+        }
+        .card-front {
+            background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%); 
+            color: white;
+            font-size: 1.7rem; 
+        }
+        .card-back {
+            background: linear-gradient(135deg, #34d399 0%, #10b981 100%); 
+            color: white;
+            transform: rotateY(180deg);
+            font-size: 0.9rem; 
+            overflow-y: auto; 
+            justify-content: center; 
+            align-items: center; 
+            padding: 20px; 
+        }
+        .card-back-definition {
+            margin-bottom: 10px;
+            font-weight: 600;
+            text-align: center; 
+            width: 100%; 
+        }
+        .card-back-example {
+            font-style: italic;
+            font-size: 0.85rem;
+            text-align: center; 
+            width: 100%; 
+        }
+
+
+        .btn {
+            padding: 12px 24px;
+            border-radius: 12px; 
+            font-weight: 700; 
+            cursor: pointer;
+            transition: all 0.3s ease; 
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .btn:hover {
+            transform: translateY(-2px) scale(1.03); 
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+        .btn:active {
+            transform: translateY(0px) scale(1); 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #facc15 0%, #eab308 100%); 
+            color: #422006; 
+        }
+        .btn-secondary {
+            background: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%); 
+            color: white;
+        }
+        .btn-game {
+            background: linear-gradient(135deg, #f472b6 0%, #ec4899 100%); 
+            color: white;
+        }
+        .btn-nav { 
+            background-color: #cbd5e1; 
+            color: #1f2937;
+        }
+        .btn-nav:hover {
+            background-color: #94a3b8;
+            color: white;
+        }
+
+        .option-btn {
+            background-color: #ffffff;
+            color: #374151;
+            border: 2px solid #e5e7eb; 
+            width: 100%;
+            text-align: center; /* Center text for vocabulary options */
+            margin-bottom: 10px; 
+            font-size: 1rem;
+            padding: 15px; 
+        }
+        .option-btn:hover {
+            background-color: #f0f9ff; 
+            border-color: #60a5fa;
+        }
+        .option-btn.correct {
+            background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+            color: white;
+            border-color: #059669;
+        }
+        .option-btn.incorrect {
+            background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
+            color: white;
+            border-color: #dc2626;
+        }
+        .screen {
+            display: none;
+            width: 100%;
+        }
+        .active-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start; 
+            padding-top: 20px;
+            min-height: calc(95vh - 40px); 
+        }
+        .progress-bar-container {
+            width: 90%;
+            max-width: 400px;
+            height: 25px; 
+            background-color: #e5e7eb;
+            border-radius: 12px;
+            margin: 15px auto;
+            overflow: hidden;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #60a5fa 0%, #3b82f6 100%);
+            border-radius: 12px;
+            transition: width 0.4s ease-in-out;
+        }
+        .mascot-emoji-container { 
+            width: 100px;
+            height: 100px;
+            margin-bottom: 15px;
+            animation: bounce 2s infinite ease-in-out;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #FFD700; 
+            border-radius: 50%;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .mascot-emoji { 
+            font-size: 60px; 
+            line-height: 1;
+        }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        .title-text {
+            font-size: 2.5rem; 
+            font-weight: 700;
+            margin-bottom: 30px;
+            text-align: center;
+            background: -webkit-linear-gradient(#3b82f6, #8b5cf6); 
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .game-card {
+            background-color: white;
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 450px;
+        }
+        .quiz-sentence { /* Style for the sentence in quiz mode */
+            font-size: 1.25rem;
+            line-height: 1.8;
+            margin-bottom: 20px;
+            text-align: center;
+            color: #374151;
+        }
+        .feedback-message {
+            font-size: 1.1rem;
+            height: 30px; 
+            margin-top: 15px;
+            font-weight: 600;
+        }
+        .icon { 
+            font-size: 1.2em;
+            display: inline-block; 
+        }
+        .flashcard-nav-buttons {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            width: 100%;
+            max-width: 400px; 
+            margin: 20px auto;
+        }
+        .home-buttons {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px; 
+            width: 100%;
+        }
+        .home-buttons .btn {
+            width: 80%;
+            max-width: 300px; 
+            font-size: 1.25rem; 
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div id="home-screen" class="screen active-screen p-4 text-center">
+            <div class="mascot-emoji-container">
+                <span class="mascot-emoji">💡</span>
+            </div>
+            <h1 class="title-text">小四中文詞彙樂園</h1>
+            <div class="home-buttons">
+                <button onclick="handleShowScreen('flashcard-screen')" class="btn btn-primary"><span class="icon">🃏</span>溫習詞彙卡</button>
+                <button onclick="handleShowScreen('game-selection-screen')" class="btn btn-game"><span class="icon">🎮</span>開始詞彙遊戲</button>
+            </div>
+            <p class="mt-10 text-sm text-gray-500">和字詞小靈精一起輕鬆學中文！</p>
+        </div>
+
+        <div id="game-selection-screen" class="screen p-4 text-center">
+            <h2 class="title-text text-purple-600 mb-8">選擇遊戲模式</h2>
+            <div class="space-y-5 w-full max-w-sm">
+                <button onclick="startGame('meaning-match')" class="btn btn-secondary text-lg w-full"><span class="icon">🧠</span>詞義配對樂</button>
+                <button onclick="startGame('idiom-match')" class="btn btn-secondary text-lg w-full"><span class="icon">📖</span>成語挑戰</button>
+                <button onclick="startGame('sentence-fill')" class="btn btn-secondary text-lg w-full"><span class="icon">📝</span>句子填充樂</button> 
+            </div>
+            <button onclick="handleShowScreen('home-screen')" class="btn btn-primary mt-12"><span class="icon">🏠</span>返回主頁</button>
+        </div>
+
+        <div id="flashcard-screen" class="screen p-4">
+            <h2 class="title-text text-blue-600 mb-2 text-center">溫習詞彙卡</h2>
+            <div class="card-container">
+                <div class="card" onclick="flipCard()"> 
+                    <div class="card-inner">
+                        <div id="flashcard-front" class="card-front">
+                            詞語
+                        </div>
+                        <div id="flashcard-back" class="card-back">
+                            <div id="flashcard-back-definition" class="card-back-definition">解釋</div>
+                            <div id="flashcard-back-example" class="card-back-example">例句</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="text-center mb-3 text-gray-600 font-medium">
+                <span id="card-counter"></span>
+            </div>
+            <div class="flashcard-nav-buttons">
+                <button onclick="prevCard()" class="btn btn-nav"><span class="icon">⬅️</span>上一張</button>
+                <button onclick="shuffleCards()" class="btn btn-nav"><span class="icon">🔀</span>隨機</button>
+                <button onclick="nextCard()" class="btn btn-nav">下一張<span class="icon">➡️</span></button>
+            </div>
+            <div class="text-center mt-6"> 
+                <button onclick="handleShowScreen('home-screen')" class="btn btn-primary"><span class="icon">🏠</span>返回主頁</button>
+            </div>
+        </div>
+
+        <div id="game-screen" class="screen p-4">
+            <h2 id="game-title" class="title-text text-green-600 mb-1 text-center">遊戲模式</h2>
+            <div class="text-center mb-1 text-lg font-semibold">
+                分數：<span id="score" class="text-yellow-500">0</span>
+            </div>
+            <div class="progress-bar-container">
+                <div id="game-progress-bar" class="progress-bar"></div>
+            </div>
+            <div class="game-card mx-auto">
+                <p class="text-center text-gray-600 mb-2">題目：<span id="question-counter">1</span> / <span id="total-questions">5</span></p> 
+                <div id="game-question-area" class="text-center mb-6">
+                    <div id="game-word" class="text-3xl font-bold text-indigo-700 break-all" style="display:none;">詞語</div>
+                     <div id="quiz-sentence-display" class="quiz-sentence" style="display:none;">句子 ___ 填充。</div>
+                </div>
+                <div id="options-container" class="space-y-2">
+                </div>
+            </div>
+            <div id="feedback-message" class="feedback-message text-center"></div>
+            <div class="text-center mt-6"> 
+                <button onclick="handleShowScreen('game-selection-screen')" class="btn btn-primary"><span class="icon">🔄</span>返回遊戲選擇</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const synth = new Tone.Synth({
+            oscillator: { type: "sine" },
+            envelope: { attack: 0.01, decay: 0.1, sustain: 0.3, release: 0.5 }
+        }).toDestination();
+
+        const playSound = (note, duration = "16n", timeOffset = 0) => {
+            if (typeof Tone !== 'undefined' && Tone.Transport.state !== 'started') {
+                Tone.Transport.start();
+            }
+            synth.triggerAttackRelease(note, duration, Tone.now() + timeOffset);
+        };
+
+        const correctSound = () => { playSound("E5", "8n"); playSound("G5", "8n", 0.1); playSound("C6", "8n", 0.2); };
+        const incorrectSound = () => playSound("C3", "4n");
+        const flipSound = () => playSound("A4", "16n", 0.02);
+        // Modified buttonClickSound to add a small offset
+        const buttonClickSound = () => playSound("C4", "16n", 0.01); 
+
+        document.body.addEventListener('click', function(event) {
+            if (event.target.tagName === 'BUTTON') {
+                const cardElement = event.target.closest('.card');
+                if (cardElement && cardElement.onclick && cardElement.onclick.toString().includes('flipCard')) {
+                    // Handled by flipCard
+                } else if (event.target.onclick && event.target.onclick.toString().includes('flipCard')) {
+                    // Handled by flipCard
+                }
+                else {
+                    buttonClickSound();
+                }
+            }
+        });
+
+        const vocabulary = [
+            // ... (Existing vocabulary with 'example', 'type', and 'quizSentence')
+            { term: "基礎", definition: "事物發展的起始點或重要部分。", example: "學習任何知識都要打好基礎。", quizSentence: "學習新知識，首先要打好 ___。", type: "word" },
+            { term: "考慮", definition: "認真思考，以便做出決定或處理事情。", example: "做事前要仔細考慮後果。", quizSentence: "購物前，我們應 ___ 是否真的需要。", type: "word" },
+            { term: "設想", definition: "想像、構想。", example: "我設想將來能成為一名科學家。", quizSentence: "你能 ___ 一下未來城市的面貌嗎？", type: "word" },
+            { term: "專利", definition: "發明人或設計人對其發明或設計依法享有的專有權利。", example: "這個新發明已經申請了專利。", quizSentence: "王伯伯的新發明成功申請了 ___。", type: "word" },
+            { term: "堅毅", definition: "意志堅定，有毅力，不輕易放棄。", example: "他憑著堅毅的精神克服了困難。", quizSentence: "運動員憑著 ___ 的精神完成了比賽。", type: "word" },
+            { term: "利益", definition: "好處。", example: "我們不應為個人利益損害集體。", quizSentence: "這項計劃能為社區帶來很多 ___。", type: "word" },
+            { term: "傳送", definition: "把物品、消息等從一處送到另一處。", example: "郵差每天傳送信件。", quizSentence: "鴿子在古代被用來 ___ 信息。", type: "word" },
+            { term: "訊息", definition: "消息、資訊。", example: "我收到了朋友發來的訊息。", quizSentence: "手機可以快速接收各種 ___。", type: "word" },
+            { term: "應用", definition: "使用（理論、知識、方法等）。", example: "我們要學會把知識應用到生活中。", quizSentence: "電腦在各行各業都有廣泛的 ___。", type: "word" },
+            { term: "清澈", definition: "形容水非常乾淨透明。", example: "小河的水清澈見底。", quizSentence: "湖水 ___，可以看到水底的石頭。", type: "word" },
+            { term: "科技", definition: "科學技術。", example: "現代科技發展迅速。", quizSentence: "___ 的進步改善了我們的生活。", type: "word" },
+            { term: "引誘", definition: "用某種手段或方法來吸引或誘使別人。", example: "不要被壞人的花言巧語所引誘。", quizSentence: "狐狸用美食 ___ 小白兔。", type: "word" },
+            { term: "反覆", definition: "一次又一次；重複。", example: "他反覆練習這個動作。", quizSentence: "老師 ___ 強調要注意安全。", type: "word" },
+            { term: "臉腫額青", definition: "形容臉部受傷，又紅又腫又發青的樣子。", example: "他不小心摔倒，跌得臉腫額青。", quizSentence: "打架後，他被打得 ___。", type: "word" },
+            { term: "呆板", definition: "不靈活，缺乏生氣。", example: "這篇文章的語言有些呆板。", quizSentence: "他的表情總是那麼 ___，很少笑。", type: "word" },
+            { term: "吃虧", definition: "受到損失或不公平的待遇。", example: "他因為貪小便宜而吃了大虧。", quizSentence: "誠實的人總是不會 ___。", type: "word" },
+            { term: "材料", definition: "製作成品所需要的東西。", example: "做蛋糕需要準備很多材料。", quizSentence: "建築工人需要足夠的建築 ___。", type: "word" },
+            { term: "摔", definition: "跌倒。", example: "走路要小心，不要摔倒。", quizSentence: "他不小心 ___ 了一跤。", type: "word" },
+            { term: "挫折", definition: "在過程中遇到的困難和失敗。", example: "遇到挫折不要輕易放棄。", quizSentence: "人生難免會遇到 ___ 和困難。", type: "word" },
+            { term: "放棄", definition: "不再堅持或追求。", example: "他決定放棄這個不切實際的計劃。", quizSentence: "雖然很難，但他從未想過 ___。", type: "word" },
+            { term: "嚴格", definition: "遵守規定或標準，不放鬆。", example: "老師對我們的要求很嚴格。", quizSentence: "教練對運動員的訓練非常 ___。", type: "word" },
+            { term: "採取", definition: "採納和實行（方法、政策等）。", example: "政府採取了新的措施來改善交通。", quizSentence: "面對問題，我們要 ___ 有效的解決方法。", type: "word" },
+            { term: "厲害", definition: "表示程度深或能力強。", example: "這個颱風真厲害！", quizSentence: "他的記憶力非常 ___，過目不忘。", type: "word" },
+            { term: "成名", definition: "變得有名氣。", example: "他夢想有一天能成為成名畫家。", quizSentence: "這位歌手因一首歌而迅速 ___。", type: "word" },
+            { term: "艱辛", definition: "困難辛苦。", example: "成功的背後往往付出很多艱辛。", quizSentence: "他們經歷了無數 ___ 才取得成功。", type: "word" },
+            { term: "嚴厲", definition: "態度嚴肅，不寬容。", example: "爸爸用嚴厲的語氣批評了他。", quizSentence: "校長用 ___ 的目光看著犯錯的學生。", type: "word" },
+            { term: "辜負", definition: "對不起別人的期望或好意。", example: "我們不能辜負老師的期望。", quizSentence: "我一定努力學習，不 ___ 父母的期望。", type: "word" },
+            { term: "浸淫", definition: "比喻長時間處於某種環境或思想影響之下。", example: "他從小浸淫在音樂中。", quizSentence: "這位學者在古典文學方面 ___ 多年。", type: "word" },
+            { term: "稱讚", definition: "用言語表達對人或事物的喜愛、敬佩。", example: "老師稱讚小明樂於助人。", quizSentence: "大家都 ___ 他勇敢的行為。", type: "word" },
+            { term: "笨拙", definition: "動作不靈活、不巧妙。", example: "小鴨子走路的樣子很笨拙。", quizSentence: "他剛學跳舞，動作還有些 ___。", type: "word" },
+            { term: "輕撫", definition: "用手輕輕地摸。", example: "媽媽輕撫著孩子的頭髮。", quizSentence: "微風 ___ 著湖面，泛起陣陣漣漪。", type: "word" },
+            { term: "優先", definition: "把重要的事情先做。", example: "遇到緊急情況，要優先處理。", quizSentence: "在資源有限的情況下，我們要 ___ 考慮最迫切的需求。", type: "word" },
+            { term: "注視", definition: "集中目光看。", example: "他專心注視著黑板。", quizSentence: "小貓好奇地 ___ 著飛舞的蝴蝶。", type: "word" },
+            { term: "丟棄", definition: "扔掉不要的東西。", example: "不要隨地丟棄垃圾。", quizSentence: "我們應該把廢舊電池回收，而不是隨意 ___。", type: "word" },
+            { term: "訪問", definition: "為了了解情況而進行的看望和談話。", example: "記者訪問了那位見義勇為的英雄。", quizSentence: "校長親自 ___ 了生病的同學。", type: "word" },
+            { term: "誤解", definition: "理解得不正確。", example: "他們之間產生了一些小誤解。", quizSentence: "這可能只是一場 ___，我們應該好好溝通。", type: "word" },
+            { term: "聊天", definition: "輕鬆地談話。", example: "我們常常在公園裡聊天。", quizSentence: "放學後，同學們喜歡聚在一起 ___。", type: "word" },
+            { term: "一見鍾情", definition: "男女之間第一次見面就產生了愛情。", example: "王子對灰姑娘一見鍾情。", quizSentence: "故事裡的男女主角在舞會上 ___。", type: "idiom" },
+            { term: "言之鑿鑿", definition: "形容說話有確實的根據，非常肯定。", example: "他言之鑿鑿地說自己看見了UFO。", quizSentence: "他 ___ 地保證這件事是真的。", type: "idiom" },
+            { term: "促膝談心", definition: "形容雙方靠近坐著，親密地交談心裡話。", example: "他們倆經常促膝談心，無所不談。", quizSentence: "爺爺喜歡和我們 ___，講過去的故事。", type: "idiom" },
+            { term: "為非作歹", definition: "做各種壞事。", example: "那些為非作歹的壞人最終會受到懲罰。", quizSentence: "警察成功抓獲了一群 ___ 的匪徒。", type: "idiom" },
+            { term: "害羣之馬", definition: "比喻危害集體的人。", example: "我們要把隊伍中的害羣之馬揪出來。", quizSentence: "每個團隊都應該警惕 ___ 的出現。", type: "idiom" },
+            { term: "挺身而出", definition: "形容勇敢站出來，承擔責任或解決困難。", example: "在危急關頭，消防員總是挺身而出。", quizSentence: "當小狗掉進水裡，他毫不猶豫地 ___ 救了它。", type: "idiom" },
+            { term: "息息相關", definition: "形容關係非常密切。", example: "環境保護與我們的生活息息相關。", quizSentence: "我們的健康與飲食習慣 ___。", type: "idiom" },
+            { term: "埋頭苦幹", definition: "形容專心一意地刻苦工作。", example: "科學家們正埋頭苦幹，進行重要的研究。", quizSentence: "為了完成任務，他 ___了好幾天。", type: "idiom" },
+            { term: "閉門造車", definition: "比喻脫離實際，只憑主觀辦事，不與人交流。", example: "學習新知識不能閉門造車，要多和別人討論。", quizSentence: "設計產品不能 ___，要了解市場需求。", type: "idiom" },
+            { term: "參差不齊", definition: "形容長短、高低、好壞等不一致，不整齊。", example: "這些樹木長得參差不齊。", quizSentence: "同學們的書法作品水平 ___。", type: "idiom" },
+            { term: "雪中送炭", definition: "比喻在別人急需的時候給予幫助。", example: "在他最困難的時候，朋友的幫助真是雪中送炭。", quizSentence: "對於災區人民來說，每一份捐助都是 ___。", type: "idiom" },
+            { term: "望梅止渴", definition: "比喻用空想來安慰自己。", example: "沒有水喝，士兵們只能靠望梅止渴來堅持。", quizSentence: "看著美食圖片卻吃不到，真是 ___ 啊！", type: "idiom" }
+        ];
+
+
+        let currentCardIndex = 0;
+        let shuffledVocab = [...vocabulary];
+
+        function handleShowScreen(screenId) {
+            console.log(`準備導航至 (Preparing to navigate to): ${screenId}`);
+            showScreen(screenId);
+        }
+
+        function showScreen(screenId) {
+            const screens = document.querySelectorAll('.screen');
+            let foundScreen = false;
+            screens.forEach(screen => {
+                if (screen.id === screenId) {
+                    screen.classList.add('active-screen');
+                    foundScreen = true;
+                } else {
+                    screen.classList.remove('active-screen');
+                }
+            });
+
+            if (!foundScreen) {
+                console.error(`錯誤：找不到ID為 "${screenId}" 的畫面。 (Error: Screen with ID "${screenId}" not found.)`);
+                if (screenId !== 'home-screen') { 
+                    const homeScreenElement = document.getElementById('home-screen');
+                    if (homeScreenElement) {
+                         console.log("嘗試返回主頁 (Attempting to fallback to home screen).");
+                         homeScreenElement.classList.add('active-screen');
+                    } else {
+                        console.error("致命錯誤：主頁畫面 (home-screen) 也找不到！(Fatal Error: Home screen also not found!)");
+                    }
+                }
+                return;
+            }
+            
+            console.log(`成功顯示畫面 (Successfully displayed screen): ${screenId}`);
+
+            if (screenId === 'flashcard-screen') {
+                loadFlashcard();
+            }
+        }
+
+        function loadFlashcard() {
+            if (shuffledVocab.length === 0) {
+                console.warn("詞彙庫為空，無法載入詞彙卡。(Vocabulary is empty, cannot load flashcard.)");
+                return;
+            }
+            const card = shuffledVocab[currentCardIndex];
+            document.getElementById('flashcard-front').textContent = card.term; 
+            document.getElementById('flashcard-back-definition').textContent = card.definition;
+            document.getElementById('flashcard-back-example').textContent = `例：${card.example || '暫無例句'}`; 
+            
+            const cardElement = document.querySelector('#flashcard-screen .card');
+            if (cardElement) {
+                cardElement.classList.remove('flipped');
+            }
+            document.getElementById('card-counter').textContent = `第 ${currentCardIndex + 1} / ${shuffledVocab.length} 張`;
+        }
+
+        function flipCard() {
+            const cardElement = document.querySelector('#flashcard-screen .card');
+            if (cardElement) {
+                cardElement.classList.toggle('flipped');
+                flipSound();
+            }
+        }
+
+        function nextCard() {
+            if (shuffledVocab.length === 0) return;
+            currentCardIndex = (currentCardIndex + 1) % shuffledVocab.length;
+            loadFlashcard();
+        }
+
+        function prevCard() {
+            if (shuffledVocab.length === 0) return;
+            currentCardIndex = (currentCardIndex - 1 + shuffledVocab.length) % shuffledVocab.length;
+            loadFlashcard();
+        }
+        
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        function shuffleCards() {
+            shuffleArray(shuffledVocab);
+            currentCardIndex = 0;
+            loadFlashcard();
+        }
+
+        let currentGameType = 'word'; 
+        let gameQuestions = [];
+        let currentQuestionIndex = 0;
+        let score = 0;
+        const NUM_QUIZ_QUESTIONS = 5; 
+        const NUM_MEANING_MATCH_QUESTIONS = 10;
+        const NUM_OPTIONS = 3;
+
+        function startGame(type) {
+            currentGameType = type;
+            let title = '';
+            let questionSource = [];
+            let numTotalQuestions = 0;
+
+            const gameWordEl = document.getElementById('game-word');
+            const quizSentenceEl = document.getElementById('quiz-sentence-display');
+            gameWordEl.style.display = 'none'; 
+            quizSentenceEl.style.display = 'none'; 
+
+
+            if (type === 'meaning-match') {
+                title = '詞義配對樂';
+                questionSource = vocabulary.filter(v => v.type === 'word');
+                numTotalQuestions = NUM_MEANING_MATCH_QUESTIONS;
+                gameWordEl.style.display = 'block';
+            } else if (type === 'idiom-match') {
+                title = '成語挑戰';
+                questionSource = vocabulary.filter(v => v.type === 'idiom');
+                numTotalQuestions = NUM_MEANING_MATCH_QUESTIONS;
+                 gameWordEl.style.display = 'block';
+            } else if (type === 'sentence-fill') {
+                title = '句子填充樂';
+                questionSource = vocabulary.filter(v => v.quizSentence && v.quizSentence.includes("___"));
+                numTotalQuestions = NUM_QUIZ_QUESTIONS;
+                quizSentenceEl.style.display = 'block';
+            }
+            document.getElementById('game-title').textContent = title;
+            
+            const uniqueTerms = new Set(questionSource.map(item => item.term));
+            if (uniqueTerms.size < NUM_OPTIONS && questionSource.length >= NUM_OPTIONS) {
+                 console.warn("詞彙選項重複較多，選項可能不夠獨特。");
+            } else if (questionSource.length < NUM_OPTIONS && type !== 'sentence-fill') { 
+                 alert(`抱歉，${currentGameType === 'word' ? '詞語' : '成語'}數量不足以開始遊戲 (最少需要${NUM_OPTIONS}個不同的詞彙)。`);
+                handleShowScreen('game-selection-screen');
+                return;
+            } else if (questionSource.length === 0 && type === 'sentence-fill') {
+                alert(`抱歉，沒有足夠的句子填充題目。`);
+                handleShowScreen('game-selection-screen');
+                return;
+            }
+
+
+            shuffleArray(questionSource);
+            gameQuestions = questionSource.slice(0, Math.min(numTotalQuestions, questionSource.length));
+             if (gameQuestions.length === 0 && questionSource.length > 0) { 
+                gameQuestions = [questionSource[0]];
+            }
+            
+            currentQuestionIndex = 0;
+            score = 0;
+            document.getElementById('score').textContent = score;
+
+            const totalQuestionsElement = document.getElementById('total-questions');
+            totalQuestionsElement.textContent = gameQuestions.length || (type === 'sentence-fill' ? NUM_QUIZ_QUESTIONS : NUM_MEANING_MATCH_QUESTIONS);
+            
+            updateGameProgressBar();
+            loadGameQuestion();
+            handleShowScreen('game-screen');
+        }
+        
+        function updateGameProgressBar() {
+            const totalQ = gameQuestions.length || (currentGameType === 'sentence-fill' ? NUM_QUIZ_QUESTIONS : NUM_MEANING_MATCH_QUESTIONS);
+            const progress = totalQ > 0 ? ((currentQuestionIndex) / totalQ) * 100 : 0;
+            const progressBarElement = document.getElementById('game-progress-bar');
+            if(progressBarElement) progressBarElement.style.width = `${progress}%`;
+        }
+
+        function loadGameQuestion() {
+            if (currentQuestionIndex >= gameQuestions.length) {
+                endGame();
+                return;
+            }
+            updateGameProgressBar();
+            document.getElementById('question-counter').textContent = currentQuestionIndex + 1;
+            const question = gameQuestions[currentQuestionIndex];
+            
+            const gameWordEl = document.getElementById('game-word');
+            const quizSentenceEl = document.getElementById('quiz-sentence-display');
+
+            let correctAnswer;
+            let options = [];
+            let distractorsPool = [];
+
+            if (currentGameType === 'sentence-fill') {
+                gameWordEl.style.display = 'none';
+                quizSentenceEl.style.display = 'block';
+                quizSentenceEl.textContent = question.quizSentence;
+                correctAnswer = question.term; 
+                options.push(correctAnswer);
+                distractorsPool = vocabulary.filter(v => v.term !== correctAnswer); 
+            } else { 
+                gameWordEl.style.display = 'block';
+                quizSentenceEl.style.display = 'none';
+                gameWordEl.textContent = question.term;
+                correctAnswer = question.definition; 
+                options.push(correctAnswer);
+                distractorsPool = vocabulary.filter(v => v.definition !== correctAnswer && v.type === question.type);
+            }
+
+            shuffleArray(distractorsPool);
+
+            for (let i = 0; options.length < NUM_OPTIONS && i < distractorsPool.length; i++) {
+                const distractorValue = (currentGameType === 'sentence-fill') ? distractorsPool[i].term : distractorsPool[i].definition;
+                if (!options.includes(distractorValue)) {
+                    options.push(distractorValue);
+                }
+            }
+            while (options.length < NUM_OPTIONS) { 
+                const emergencyOptionBase = (currentGameType === 'sentence-fill') ? "其他詞語" : "其他解釋";
+                const emergencyOption = `${emergencyOptionBase} ${options.length + Math.floor(Math.random()*100)}`;
+                if(!options.includes(emergencyOption)) options.push(emergencyOption);
+                else options.push(`${emergencyOptionBase} ${options.length + Math.floor(Math.random()*1000)}`) 
+            }
+
+            shuffleArray(options);
+            
+            const optionsContainer = document.getElementById('options-container');
+            optionsContainer.innerHTML = '';
+            document.getElementById('feedback-message').textContent = '';
+
+            options.forEach(optionText => {
+                const button = document.createElement('button');
+                button.classList.add('btn', 'option-btn');
+                button.textContent = optionText;
+                button.onclick = () => checkAnswer(optionText === correctAnswer, button);
+                optionsContainer.appendChild(button);
+            });
+        }
+
+        function checkAnswer(isCorrect, buttonElement) {
+            const feedbackMessage = document.getElementById('feedback-message');
+            document.querySelectorAll('#options-container button').forEach(btn => btn.disabled = true);
+            const question = gameQuestions[currentQuestionIndex];
+
+            if (isCorrect) {
+                score++;
+                document.getElementById('score').textContent = score;
+                buttonElement.classList.add('correct', 'animate-pulse');
+                feedbackMessage.textContent = '答對了！🎉 太棒了！';
+                feedbackMessage.className = 'feedback-message text-center text-green-500';
+                correctSound();
+            } else {
+                buttonElement.classList.add('incorrect');
+                feedbackMessage.textContent = '差少少咋！再接再厲！💪';
+                feedbackMessage.className = 'feedback-message text-center text-orange-500';
+                incorrectSound();
+                const correctAnswerText = (currentGameType === 'sentence-fill') ? question.term : question.definition;
+                document.querySelectorAll('#options-container button').forEach(btn => {
+                    if (btn.textContent === correctAnswerText) {
+                        btn.classList.add('correct'); 
+                    }
+                });
+            }
+
+            currentQuestionIndex++;
+            setTimeout(() => {
+                if (currentQuestionIndex < gameQuestions.length) {
+                    loadGameQuestion();
+                } else {
+                    endGame();
+                }
+            }, 2000); 
+        }
+
+        function endGame() {
+            updateGameProgressBar();
+            const gameQuestionArea = document.getElementById('game-question-area');
+            const optionsContainer = document.getElementById('options-container');
+            const feedbackMessage = document.getElementById('feedback-message');
+            const totalQuestionsForMode = gameQuestions.length || (currentGameType === 'sentence-fill' ? NUM_QUIZ_QUESTIONS : NUM_MEANING_MATCH_QUESTIONS);
+
+
+            gameQuestionArea.innerHTML = `<p class="text-center text-2xl font-bold text-indigo-600">遊戲結束！</p>`;
+            optionsContainer.innerHTML = `<p class="text-center text-2xl font-bold">你的總分是： ${score} / ${totalQuestionsForMode}</p>`;
+            
+            let endMsg = '';
+            let endMsgClass = 'text-indigo-600';
+            if (totalQuestionsForMode > 0 && score === totalQuestionsForMode) {
+                endMsg = '🎉 嘩！全部答對！你是詞彙大師！ 🥳';
+                endMsgClass = 'text-yellow-500';
+            } else if (totalQuestionsForMode > 0 && score >= totalQuestionsForMode * 0.7) {
+                endMsg = '👍 做得非常出色！繼續努力！ ✨';
+                endMsgClass = 'text-green-500';
+            } else if (totalQuestionsForMode > 0 && score >= totalQuestionsForMode / 2) {
+                endMsg = '做得不錯！下次會更好！😊';
+                endMsgClass = 'text-blue-500';
+            } else {
+                endMsg = '� 加油！多多溫習，下次一定進步！';
+                endMsgClass = 'text-orange-500';
+            }
+            feedbackMessage.textContent = endMsg;
+            feedbackMessage.className = `feedback-message text-center ${endMsgClass}`;
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log("DOM 完全載入並解析完畢 (DOM fully loaded and parsed.)");
+            handleShowScreen('home-screen'); 
+            shuffleCards();
+
+            async function initAudio() {
+                try {
+                    if (typeof Tone !== 'undefined' && Tone.context.state !== 'running') {
+                        await Tone.start();
+                        console.log("音訊已準備好 (Audio context started via DOMContentLoaded interaction)");
+                    } else if (typeof Tone !== 'undefined' && Tone.context.state === 'running') {
+                         console.log("音訊已在運行中 (Audio context already running)");
+                    }
+                } catch (e) {
+                    console.error("無法啟動音訊 (Error starting audio context):", e);
+                }
+            }
+            ['click', 'touchstart'].forEach(eventName => {
+                document.body.addEventListener(eventName, initAudio, { once: true });
+            });
+        });
+
+    </script>
+</body>
+</html>
+�
